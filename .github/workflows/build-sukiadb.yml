@@ -1,0 +1,84 @@
+name: Build SukiADB APK
+
+# 用法：把整个仓库 push 到 GitHub，Actions 会自动编译并产出 APK。
+# 也可以在 Actions 页面手动点 Run workflow。
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出源码（需要完整历史，versionName 依赖 git 提交数）
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      # .gitmodules 指向的 Axeron-API 是 Git 子模块，zip 包里不会带内容，
+      # 这里显式拉下来，避免 settings.gradle.kts 找不到 api/aidl 等目录。
+      - name: 拉取 Axeron-API 子模块
+        run: |
+          rm -rf api
+          git clone --depth 1 https://github.com/fahrez182/Axeron-API.git api
+          echo "--- api 目录内容 ---"
+          ls -A api | head -20
+
+      - name: 安装 JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: 安装 Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 安装 SDK 组件与 NDK
+        run: |
+          sdkmanager --install \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "ndk;29.0.14206865" \
+            "cmake;3.22.1"
+          yes | sdkmanager --licenses || true
+
+      - name: 生成签名密钥
+        run: |
+          keytool -genkeypair -v \
+            -keystore "$GITHUB_WORKSPACE/release.keystore" \
+            -alias sukiadb \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass sukiadb -keypass sukiadb \
+            -dname "CN=SukiADB, O=Local, C=CN"
+
+      - name: 写入 local.properties
+        run: |
+          cat > local.properties <<EOF
+          sdk.dir=$ANDROID_SDK_ROOT
+          api_version_code=30000
+          api_version_name=3.0.0
+          signing.storeFile=$GITHUB_WORKSPACE/release.keystore
+          signing.storePassword=sukiadb
+          signing.keyAlias=sukiadb
+          signing.keyPassword=sukiadb
+          EOF
+          echo "--- local.properties ---"
+          cat local.properties
+
+      - name: 编译
+        run: |
+          chmod +x gradlew
+          ./gradlew :manager:assembleRelease --no-daemon --stacktrace
+
+      - name: 上传 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SukiADB-APK
+          path: |
+            manager/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 30

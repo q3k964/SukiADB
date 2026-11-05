@@ -1,0 +1,152 @@
+# <Icon name="plugin" /> Plugin (Unrooted Module)
+
+::: warning Conclusion
+**Know your limits**
+:::
+
+[[toc]]
+
+## Background
+
+The Plugin concept is built on the same architecture as root modules. It is not intended as a replacement, but rather as an **additional feature** that introduces an unrooted version within **AxManager**.
+
+At this stage, the idea serves as an initial exploration: extending the root-module foundation into a form that can operate without root access, while still remaining part of the same modular framework.
+
+In the future, this approach can be further developed to provide broader functionality and new use cases, balancing between rooted and unrooted environments.
+
+## WebUI
+
+AxManager's plugins support displaying interfaces and interacting with users same as **KernelSU** but without root access. For more details, refer to the [KernelSU WebUI documentation](https://kernelsu.org/guide/module-webui.html).
+
+::: info DIFFERENCE WITH KERNELSU
+AxManager is support **KernelSU** API and only differs in permissions and how to treat local directories from `webroot/index.html`
+:::
+
+The `ksu` and `Axeron` JavaScript objects available to a WebUI are documented in [WebUI API](./webui-api.md).
+
+## BusyBox
+
+AxManager ships with a feature-complete BusyBox binary (including full SELinux support). The executable is located at `$AXERONDIR/bin/busybox` (see [Working folder](#working-folder)).
+
+AxManager's BusyBox supports runtime toggle-able "ASH Standalone Shell Mode". What this Standalone Mode means is that when running in the ash shell of BusyBox, every single command will directly use the applet within BusyBox, regardless of what is set as `PATH`. For example, commands like `ls`, `rm`, `chmod` will **NOT** use what is in PATH (in the case of Android by default it will be `/system/bin/ls`, `/system/bin/rm`, and `/system/bin/chmod` respectively), but will instead directly call internal BusyBox applets. This makes sure that scripts always run in a predictable environment and always have the full suite of commands no matter which Android version it is running on. To force a command not to use BusyBox, you have to call the executable with full paths.
+
+Every single shell script running in the context of AxManager will be executed in BusyBox's `ash` shell with Standalone Mode enabled. For what is relevant to 3rd party developers, this includes all boot scripts and module installation scripts.
+
+::: info DIFFERENCE WITH MAGISK / KERNELSU
+AxManager's BusyBox is now using the binary file compiled directly from the Magisk project. Thanks to Magisk! Therefore, you don't need to worry about compatibility issues between BusyBox scripts in Magisk, KernelSU and AxManager, as they're exactly the same!
+:::
+
+## Working folder
+
+Root mode and shell mode each keep their own folder, exposed to every script as `$AXERONDIR`:
+
+| Mode | `$AXERONDIR` |
+|---|---|
+| Root | `/data/adb/axeron` |
+| Shell | `/data/user_de/0/com.android.shell/axeron` |
+
+Always use `$AXERONDIR` instead of hardcoding either path. What is inside it, and every variable your scripts get, is listed in [Environment & Paths](./environment.md).
+
+## AxManager plugins
+
+A AxManager plugin is a folder placed in `$AXERONDIR/plugins` with the structure below:
+
+```
+$AXERONDIR/plugins
+├── .
+├── .
+│
+├── $MODID                  <--- The folder is named with the ID of the module
+│   │
+│   │      *** Module Identity ***
+│   │
+│   ├── module.prop         <--- This file stores the metadata of the module
+│   │
+│   │      *** Main Contents ***
+│   │
+│   ├── system
+│   │   └── bin             <--- This folder will be added on PATH
+│   │
+│   │      *** Status Flags ***
+│   │
+│   ├── disable             <--- If exists, the module will be disabled
+│   ├── remove              <--- If exists, the module will be removed next reboot
+│   │
+│   │      *** Optional Files ***
+│   │
+│   ├── post-fs-data.sh     <--- This script will be executed in BOOT_COMPLETED first sync
+│   ├── service.sh          <--- This script will be executed in BOOT_COMPLETED late_start service
+│   ├── uninstall.sh        <--- This script will be executed when AxManager removes your module
+│   ├── action.sh           <--- This script will be executed when user click the Action button in AxManager app
+│   ├── system.prop         <--- Properties in this file will be loaded as system properties by setprop (debug only)
+│   │
+│   │      *** Any additional files / folders are allowed ***
+│   │
+│   ├── ...
+│   └── ...
+│
+├── another_module
+│   ├── .
+│   └── .
+├── .
+├── .
+```
+
+::: warning DIFFERENCE WITH ROOT METHOD
+
+AxManager uses the **BOOT_COMPLETED** receiver and **Hot Restart System** approach to start `post-fs-data.sh`, `system.prop`, `late_start service.sh`, and all other files are treated the same in root mode. except the root init method.
+:::
+
+### module.prop
+
+module.prop is a configuration file for a module. In AxManager, if a module doesn't contain this file, it won't be recognized as a module. The format of this file is as follows:
+
+```prop{7}
+id=<string>
+name=<string>
+version=<string>
+versionCode=<int>
+author=<string>
+description=<string>
+axeronPlugin=<int> <--- A field for targeting AxManager server version supported
+```
+
+- `id` has to match this regular expression: `^[a-zA-Z][a-zA-Z0-9._-]+$`
+  Example: ✓ `a_module`, ✓ `a.module`, ✓ `module-101`, ✗ `a module`, ✗ `1_module`, ✗ `-a-module`
+  This is the **unique identifier** of your module. You should not change it once published.
+  The installer refuses a module whose `id` does not match, since the id names the plugin's folder.
+- `versionCode` has to be an **integer**. This is used to compare versions.
+- `axeronPlugin` is **required** and has to be a **number** (e.g. `30000`). A module without it, or with a non-numeric value, is refused.
+- Others that were not mentioned above can be any **single line string.**
+- Make sure to use the `UNIX (LF)` line break type and not the `Windows (CR+LF)` or `Macintosh (CR)`.
+
+::: warning
+Make sure the `axeronPlugin=version` you are using is **equal to or lower** than your AxManager **server version**. If the **server version** is lower than `axeronPlugin=version`, you **won’t** be able to flash it on AxManager.
+:::
+
+### Shell scripts
+
+In all scripts of your module, please use `MODDIR=${0%/*}` to get your module's base directory path **EXCEPT** `customize.sh`; do **NOT** hardcode your module path in scripts.
+
+::: warning DIFFERENCE WITH ROOT METHOD
+You can use the environment variable `AXERON` to determine if a script is running in AxManager, KernelSU or Magisk. If running in AxManager, this value will be set to true.
+:::
+
+### `system` directory
+
+::: warning DIFFERENCE WITH ROOT METHOD
+
+AxManager **for now** only affects `/system/bin` by adding it to the `PATH`, so binaries there can be called directly in any script.
+:::
+
+### Processes and script limits
+
+- Every process a plugin starts (from any of its scripts, its action or its WebUI) carries `AXERON_PLUGIN=<id>`. Disabling, updating or removing the plugin stops all of them, daemons included: `SIGTERM`, then `SIGKILL` after about 3 seconds. Don't clear that variable in your scripts.
+- `post-fs-data.sh` and `uninstall.sh` may block for at most **40 seconds**. Their output goes to `$AXERONDIR/logs/<id>.post-fs-data.log` and `$AXERONDIR/logs/<id>.uninstall.log`. Start long-running work from `service.sh`.
+- By default plugins keep running when the server stops; **Settings → Stop plugins with the server** changes that.
+
+Details in [Environment & Paths](./environment.md#plugin-processes).
+
+## Plugin installer
+
+A plugin is installed from a ZIP, like a `root` module, and can customize its installation with `customize.sh`. See **[Plugin Installer](./plugin-installer.md)**.

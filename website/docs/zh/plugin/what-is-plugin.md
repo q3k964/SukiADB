@@ -1,0 +1,152 @@
+# <Icon name="plugin" /> 插件（非 Root 模块）
+
+::: warning 结论
+**了解你的限制**
+:::
+
+[[toc]]
+
+## 背景
+
+插件概念建立在与 root 模块相同的架构上。它不是作为替代品，而是作为 **AxManager** 中的一个**附加功能**，引入了非 Root 版本。
+
+在这个阶段，这个想法作为一个初步的探索：将 root 模块的基础扩展为一种可以在没有 root 访问权限的情况下运行的形式，同时仍然是同一模块化框架的一部分。
+
+未来，这种方法可以进一步发展，以提供更广泛的功能和新的用例，在 Root 和非 Root 环境之间取得平衡。
+
+## WebUI
+
+AxManager 的插件支持显示界面和与用户交互，与 **KernelSU** 相同，但不需要 root 访问权限。更多详情请参阅 [KernelSU WebUI 文档](https://kernelsu.org/guide/module-webui.html)。
+
+::: info 与 KernelSU 的区别
+AxManager 支持 **KernelSU** API，仅在权限和如何处理 `webroot/index.html` 的本地目录方面有所不同
+:::
+
+WebUI 可以使用的 `ksu` 和 `Axeron` JavaScript 对象，请参阅 [WebUI API](./webui-api.md)。
+
+## BusyBox
+
+AxManager 附带一个功能完整的 BusyBox 二进制文件（包括完整的 SELinux 支持）。可执行文件位于 `$AXERONDIR/bin/busybox`（参见[工作目录](#工作目录)）。
+
+AxManager 的 BusyBox 支持运行时可切换的"ASH 独立 Shell 模式"。这种独立模式意味着当在 BusyBox 的 ash shell 中运行时，每个命令都将直接使用 BusyBox 内部的小程序，而不管 `PATH` 设置为什么。例如，`ls`、`rm`、`chmod` 等命令将**不会**使用 PATH 中的内容（在 Android 的情况下，默认将是 `/system/bin/ls`、`/system/bin/rm` 和 `/system/bin/chmod`），而是直接调用内部 BusyBox 小程序。这确保脚本始终在可预测的环境中运行，并且无论运行在哪个 Android 版本上，都具有完整的命令套件。要强制命令不使用 BusyBox，您必须使用完整路径调用可执行文件。
+
+在 AxManager 上下文中运行的每个 shell 脚本都将在启用独立模式的 BusyBox `ash` shell 中执行。对于第三方开发者相关的内容，这包括所有启动脚本和模块安装脚本。
+
+::: info 与 Magisk / KernelSU 的区别
+AxManager 的 BusyBox 现在使用直接从 Magisk 项目编译的二进制文件。感谢 Magisk！因此，您不必担心 Magisk、KernelSU 和 AxManager 之间 BusyBox 脚本的兼容性问题，因为它们完全相同！
+:::
+
+## 工作目录
+
+Root 模式和 shell 模式各自使用独立的文件夹，并以 `$AXERONDIR` 提供给所有脚本：
+
+| 模式 | `$AXERONDIR` |
+|---|---|
+| Root | `/data/adb/axeron` |
+| Shell | `/data/user_de/0/com.android.shell/axeron` |
+
+请始终使用 `$AXERONDIR`，不要硬编码任何一个路径。其中包含哪些内容，以及脚本能获得的所有变量，请参阅[环境与路径](./environment.md)。
+
+## AxManager 插件
+
+AxManager 插件是放置在 `$AXERONDIR/plugins` 中的文件夹，结构如下：
+
+```
+$AXERONDIR/plugins
+├── .
+├── .
+│
+├── $MODID                  <--- 文件夹以模块的 ID 命名
+│   │
+│   │      *** 模块标识 ***
+│   │
+│   ├── module.prop         <--- 此文件存储模块的元数据
+│   │
+│   │      *** 主要内容 ***
+│   │
+│   ├── system
+│   │   └── bin             <--- 此文件夹将添加到 PATH
+│   │
+│   │      *** 状态标志 ***
+│   │
+│   ├── disable             <--- 如果存在，模块将被禁用
+│   ├── remove              <--- 如果存在，模块将在下次重启时被移除
+│   │
+│   │      *** 可选文件 ***
+│   │
+│   ├── post-fs-data.sh     <--- 此脚本将在 BOOT_COMPLETED 首次同步时执行
+│   ├── service.sh          <--- 此脚本将在 BOOT_COMPLETED late_start service 中执行
+│   ├── uninstall.sh        <--- 当 AxManager 移除您的模块时将执行此脚本
+│   ├── action.sh           <--- 当用户在 AxManager 应用中点击操作按钮时将执行此脚本
+│   ├── system.prop         <--- 此文件中的属性将通过 setprop 加载为系统属性（仅调试）
+│   │
+│   │      *** 允许任何其他文件/文件夹 ***
+│   │
+│   ├── ...
+│   └── ...
+│
+├── another_module
+│   ├── .
+│   └── .
+├── .
+├── .
+```
+
+::: warning 与 Root 方法的区别
+
+AxManager 使用 **BOOT_COMPLETED** 接收器和 **热重启系统** 方法来启动 `post-fs-data.sh`、`system.prop`、`late_start service.sh`，所有其他文件在 root 模式下的处理方式相同。除了 root init 方法。
+:::
+
+### module.prop
+
+module.prop 是模块的配置文件。在 AxManager 中，如果模块不包含此文件，它将不会被识别为模块。此文件的格式如下：
+
+```prop{7}
+id=<string>
+name=<string>
+version=<string>
+versionCode=<int>
+author=<string>
+description=<string>
+axeronPlugin=<int> <--- 用于定位支持的 AxManager 服务器版本的字段
+```
+
+- `id` 必须匹配此正则表达式：`^[a-zA-Z][a-zA-Z0-9._-]+$`
+  示例：✓ `a_module`，✓ `a.module`，✓ `module-101`，✗ `a module`，✗ `1_module`，✗ `-a-module`
+  这是您模块的**唯一标识符**。一旦发布，您不应更改它。
+  由于 id 用作插件文件夹的名称，`id` 不匹配的模块将被安装程序拒绝。
+- `versionCode` 必须是**整数**。这用于比较版本。
+- `axeronPlugin` 是**必需的**，且必须是**数字**（例如 `30000`）。缺少该字段或其值不是数字的模块将被拒绝。
+- 上面未提到的其他内容可以是任何**单行字符串**。
+- 确保使用 `UNIX (LF)` 换行类型，而不是 `Windows (CR+LF)` 或 `Macintosh (CR)`。
+
+::: warning
+确保您使用的 `axeronPlugin=version` **等于或低于**您的 AxManager **服务器版本**。如果**服务器版本**低于 `axeronPlugin=version`，您将**无法**在 AxManager 上刷入它。
+:::
+
+### Shell 脚本
+
+在模块的所有脚本中，请使用 `MODDIR=${0%/*}` 来获取模块的基本目录路径，**除了** `customize.sh`；请**不要**在脚本中硬编码模块路径。
+
+::: warning 与 Root 方法的区别
+您可以使用环境变量 `AXERON` 来确定脚本是在 AxManager、KernelSU 还是 Magisk 中运行。如果在 AxManager 中运行，此值将设置为 true。
+:::
+
+### `system` 目录
+
+::: warning 与 Root 方法的区别
+
+AxManager **目前**仅通过将 `/system/bin` 添加到 `PATH` 来影响它，因此那里的二进制文件可以在任何脚本中直接调用。
+:::
+
+### 进程与脚本限制
+
+- 插件启动的每个进程（来自其任何脚本、操作按钮或 WebUI）都带有 `AXERON_PLUGIN=<id>`。禁用、更新或移除插件会停止它的全部进程，包括守护进程：先 `SIGTERM`，大约 3 秒后 `SIGKILL`。请不要在脚本中清除该变量。
+- `post-fs-data.sh` 和 `uninstall.sh` 最多阻塞 **40 秒**。它们的输出写入 `$AXERONDIR/logs/<id>.post-fs-data.log` 和 `$AXERONDIR/logs/<id>.uninstall.log`。长时间运行的任务请从 `service.sh` 启动。
+- 默认情况下，服务停止后插件会继续运行；**设置 → 随服务停止插件**可以改变这一行为。
+
+详情请参阅[环境与路径](./environment.md#plugin-processes)。
+
+## 插件安装程序
+
+插件像 `root` 模块一样从 ZIP 安装，并可以用 `customize.sh` 自定义安装过程。参见 **[插件安装程序](./plugin-installer.md)**。

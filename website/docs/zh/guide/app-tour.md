@@ -1,0 +1,164 @@
+# <Icon name="tour" /> 应用导览
+
+逐一介绍 AxManager 的每个页面及其选项的作用。如何启动 AxManager，请参阅[用户手册](./user-manual.md)。
+
+::: info 关于界面文字
+本文中的按钮和选项名称与应用界面保持一致。应用的简体中文翻译尚未覆盖所有文字，未翻译的部分在应用中显示为英文，本文也照样使用英文名称。
+:::
+
+[[toc]]
+
+## 主页 {#home}
+
+底部导航栏有四个页面：**主页**、**特权**、**插件**和**设置**。
+
+### 状态卡片 {#status-card}
+
+顶部卡片显示服务状态。点击它可打开[激活](./user-manual.md#start-axeron-manager)页面。
+
+| 状态 | 含义 |
+|---|---|
+| **运行中** | 服务正在运行。徽章显示其模式（root 或 shell）。 |
+| **未激活**（*Stopped*） | 服务没有运行。 |
+| **需要额外的步骤**（*Action needed*） | 服务在运行，但系统阻止了 AxManager 需要的某些操作。点击**点击查看修复方法**。 |
+| **更新中…** | 应用已更新，旧服务正在被替换为新版本。 |
+
+运行时，卡片还会显示：
+
+- **Wakelock**：点击该标签可开启或关闭。它在熄屏时保持 CPU 唤醒，避免服务被挂起。
+- 运行时长、PID、UID 和服务版本。
+- 电源按钮：重载插件、重启或关闭服务（参见[停止或重启](./user-manual.md#stop-or-restart)）。
+- 您已允许的应用数量（**特权**）和已安装的**插件**数量。
+
+停止时，卡片会显示上次的启动方式（**Last: ADB / Root / Root (shell)**）以及是否开启了[开机自启](./user-manual.md#activate-on-boot)（**Boot**）。
+
+服务运行时，悬浮按钮可打开[快速终端](#quickshell)。如果服务已关闭，但 AxManager 仍持有设置相关的权限，会出现 **Quick Settings** 卡片，让您照常使用[快捷设置](#quick-settings)。
+
+### 签名卡片 {#signature}
+
+位于状态卡片下方，服务运行时显示。AxManager 不依赖自己的包名来认识服务：服务通过它所运行的应用的签名证书，识别是哪个管理器启动了它，卡片显示这是否与本应用一致。
+
+| 标记 | 含义 |
+|---|---|
+| **Match** | 服务由与本应用使用相同证书签名的管理器启动。 |
+| **Mismatch** | 服务由另一个签名的管理器启动。请从本应用重新启动。 |
+| **Unverified** | binder 尚未以 root 或 shell 回调，因此它报告的任何内容都不被信任。 |
+
+各行显示 **Server binder**（是否以 root 或 shell 回调，以及 uid）、**Server trusts**（服务固定下来的证书）和 **This manager**（本应用的证书）。点击签名即可复制。
+
+如果之后另一个管理器（另一份安装、签名不同）启动服务，它会取代正在运行的那一个。无法识别自己的管理器的服务会停止。
+
+### 设备信息 {#device-information}
+
+设备型号、Android 版本、安全补丁、内核、ABI 以及服务的 SELinux 上下文。点击某个值即可复制。
+
+## 特权 {#privilege}
+
+可以允许使用 AxManager 的应用列表，每个应用都带有其 Axeron permission（**Allowed**、**Ask** 或 **Denied**）。点击应用查看详情：权限、特殊访问权限、app-op 和操作。全部内容见 **[特权与权限](./privilege.md)**。
+
+## 插件 {#plugin}
+
+已安装的[插件](../plugin/what-is-plugin.md)。
+
+- **+** 可安装一个或多个插件 ZIP。在 Android 11+ 上，AxManager 会先请求所有文件访问权限。
+- 点击插件可展开它。**启用**（打开）按钮打开其 WebUI，**运行**按钮执行其 `action.sh`。
+- 每个插件都可以启用、禁用、更新（插件提供了 `updateJson` 时）、卸载，或在卸载生效前恢复。
+- 改动会在下一次重载时生效。有改动等待生效时，**+** 上方会出现一个**火焰**按钮；点击即可立即[重载](../plugin/re-ignite.md)。
+- **WebUI 快捷方式**：插件的 **WebUI配置**（调节按钮）中有**添加快捷方式**，可将其 WebUI 固定到桌面，并设置名称和图标（插件的横幅、首字母或相册中的图片）。如果没有反应，请允许 AxManager 的"桌面快捷方式"权限。
+
+**排序设置**按钮可按名称、大小、启用状态、有操作的插件或有 WebUI 的插件排序，并包含**开发者模式**开关。
+
+开启开发者模式后，列表顶部的**开发者信息**卡片会显示插件脚本看到的内容：`$AXERONVER`、服务的 uid 和 SELinux 上下文、`$AXERONDIR`、插件文件夹、`$AXERONBIN`、`$AXERONXBIN`、`$TMPDIR` 和日志文件夹，以及插件数量、**随服务停止插件**设置和 `AXERON_PLUGIN=<id>` 进程标记。点击某个值即可复制。
+
+## 快速终端 {#quickshell}
+
+以服务的权限运行命令的终端：shell，或在以 root 启动服务时为 root。从主页的悬浮按钮打开。
+
+- 输入命令并运行。命令运行时，输入框会把文字发送到它的标准输入。
+- 开头的 `adb shell` 会被去掉，因此从教程中复制的命令可以直接使用。
+- 输出工具栏中有**在输出中查找**、跳转到行、行号、自动换行和字号。
+- 输出不会被截断，无论多长。保存的日志可以按输出类型筛选。
+- 长按输出可选中一个词，然后拖动或移动任一侧的手柄；滚动时选区保持不变，**Copy** 会复制其间的所有行。**Select all** 选中全部输出。
+- 位于底部时会跟随新输出；在 **Output** 中关闭 **Auto-scroll** 可停留在当前位置。最后一行可以滚动到屏幕顶部。
+
+**Shell settings**（设置按钮）：
+
+- **Snippets**：保存一条命令或整段脚本，之后运行或插入。在 AxManager 中任意位置（例如命令或输出）选中文字后，从文字选择菜单中选择 **Save snippet**，或使用 **Add snippet**。该菜单项只在 AxManager 内出现，不会出现在其他应用中。
+- **Output**：针对每种输出类型（命令、stdout、stderr、退出码……），设置是否在屏幕上显示、是否保存在日志中。
+- **按键拦截器**：在快速终端打开时拦截音量加和/或音量减键。
+- **兼容模式**：通过内置的 BusyBox（`setsid` + `sh`）启动每个会话。您的命令仍在 `/system/bin/sh` 中运行，使用哪些工具取决于 `PATH`（参见 [Prefer System Binaries](#environment)）。如果会话无法启动，请关闭它。
+- **Run in any terminal**：在 Termux 等其他终端应用中使用同一个 shell 的命令。参见[在任意终端中运行](./axsh.md)。
+
+## 设置编辑器 {#settings-editor}
+
+**设置 → 设置编辑器**（服务运行时）可浏览和编辑：
+
+| 标签页 | 来源 | 可编辑 |
+|---|---|---|
+| **Global**、**Secure**、**System** | Android 设置（`settings` 命令） | 是 |
+| **Props** | Android 系统属性（通过 `resetprop`） | 视服务的模式而定 |
+| **Environment** | AxManager 服务的环境变量 | 您自己的变量，以及向 `PATH` / `LD_LIBRARY_PATH` 添加的条目 |
+
+**All** 同时显示所有来源，并概览每个来源的条目数量。可按键或值搜索。点击条目即可编辑，也可以添加新键或删除。
+
+### 环境变量 {#environment-editor}
+
+AxManager 和 Android 设置的变量（参见[环境变量](../plugin/environment.md#environment-variables)）标记为 **Locked**：会显示，但不能修改，因此保存的副本不会过时，也不会丢失系统自己的路径。您的环境变量只能在其基础上添加：
+
+- 您自己的任意变量，可以编辑或删除。
+- `PATH` 和 `LD_LIBRARY_PATH` 以 `$PATH`（或 `$LD_LIBRARY_PATH`）**之前**和**之后**的条目来编辑；它代表默认值，不能删除，其代表的内容列在下方。之前的条目会被优先查找。行上显示 **+N before** / **+N after**。
+
+保存的更改会应用于服务此后启动的进程。保存失败时，提示消息会说明原因。
+
+### 快捷设置 {#quick-settings}
+
+在设置编辑器中长按某个设置并选择 **Add to Quick Settings**，即可一键访问。每个快捷设置可以是：
+
+- **Custom value**：显示当前值；输入任意新值即可应用。
+- **Switch**：两个值，分别对应开和关。
+- **Options**：一组带标签的值。
+- **Slider**：介于最小值和最大值之间、带步长的数字。
+
+通过设置编辑器旁边的闪电按钮打开快捷设置。Global、Secure 和 System 的快捷设置在服务关闭时也能使用，依靠的是服务运行时授予 AxManager 的设置权限。
+
+## 进程管理器 {#process-manager}
+
+**设置 → Process Manager**（服务运行时）列出设备上的所有进程，屏幕打开期间实时刷新。
+
+- 标签页分为全部进程、应用、系统、内核线程，以及 AxManager 启动的进程。
+- 可按名称、PID、用户、包名或 SELinux 标签搜索；按 PID、名称、RSS、VSZ、CPU 或 UID 排序；按 PID、PPID、PGID、UID、内存范围和状态筛选；也可以按父进程以树状显示。
+- 点击进程可查看其资源占用、身份、命令行、环境变量、打开的文件、限制和 cgroup，每项都有说明。在这里可以向该进程（或其进程组）发送信号，或强行停止其所属应用。
+
+只有当进程名是应用的包名（或 `包名:后缀`）时，才会把它归属到该应用。不会预先检查任何操作：内核或 SELinux 拒绝的操作（例如在 shell 模式下）会显示为各自的错误。
+
+## 设置 {#settings}
+
+### 环境 {#environment}
+
+除最后一项外，仅在服务运行时显示：
+
+- **AX-Stealth Mode**：你未允许的应用无法看到 AxManager：没有授权对话框，也没有任何回应，Shizuku 客户端也包括在内。新应用改为在[特权](./privilege.md)中允许；已获准的应用照常工作。旁边的信息图标（其他需要更多说明的设置旁也有）会给出完整解释。参见 [3.0 的安全更新](./security.md)。
+- **AX-权限接管**：让基于 Shizuku-API 构建的应用使用 AxManager。参见 [Shizuku 兼容](./shizuku-compatibility.md)。
+- **随服务停止插件**：服务停止时，插件也随之停止。关闭（默认）时，插件将独立继续运行。参见[插件进程](../plugin/environment.md#plugin-processes)。
+- **Prefer System Binaries**：在 `PATH` 中把 Android 自带的程序放在 AxManager 的 BusyBox 之前，让命令使用系统版本。
+
+### 常规 {#general}
+
+- **开机自启**：参见[开机自启](./user-manual.md#activate-on-boot)。
+- **自动重载**：每次 AxManager 连接到服务时都重载插件，而不仅是服务启动后的第一次。
+
+### 维护 {#maintenance}
+
+**重置 AxManager** 会禁用并移除您的所有插件：所有插件被标记为移除并运行点火器（因此会执行它们的 `uninstall.sh`），然后删除 AxManager 的文件夹并重启服务。Root 模式和 shell 模式使用[各自独立的文件夹](../plugin/environment.md#working-folder)：root 服务可以重置 root 文件夹、shell 文件夹或两者；shell 服务只能重置自己的文件夹。
+
+### 主题设置 {#appearance}
+
+- **语言设置**：English、Bahasa Indonesia、简体中文，或系统默认值。
+- **主题风格**：跟随系统，或选择深色、浅色。
+- **莫奈取色**：使用壁纸的颜色（Android 12+）。
+- **调色板**：未开启莫奈取色时选择主色。
+
+### 开发者 {#developer}
+
+- **开发者模式**：显示面向开发者的隐藏设置和调试信息，例如插件页的[开发者信息](#plugin)卡片。
+- **WebView 调试功能**：在开启开发者模式的情况下，允许对插件 WebUI 进行 WebView 远程调试，并添加页面内控制台（Eruda）。
