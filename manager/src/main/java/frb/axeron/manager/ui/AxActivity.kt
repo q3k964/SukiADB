@@ -15,6 +15,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -22,6 +23,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -59,6 +61,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
@@ -280,48 +283,52 @@ class AxActivity : ComponentActivity() {
                             dependency(viewModelGlobal)
                         },
                         defaultTransitions = object : NavHostAnimatedDestinationStyle() {
+                            // iOS 导航曲线 cubic-bezier(0.32, 0.72, 0, 1)：
+                            // 起手快、收尾带阻尼，比 Material 的线性 tween 更跟手。
+                            val iosCurve = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
+                            val iosMs = 380
+
                             override val enterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition
                                 get() = {
-                                    val initialState = initialState.destination.route
-                                    val targetState = targetState.destination.route
+                                    val fromRoute = initialState.destination.route
+                                    val toRoute = targetState.destination.route
+                                    val fromIdx = BottomBarDestination.entries.find { it.direction.route == fromRoute }?.ordinal ?: -1
+                                    val toIdx = BottomBarDestination.entries.find { it.direction.route == toRoute }?.ordinal ?: -1
 
-                                    // Cari indeks destinasi di BottomBar
-                                    val initialIndex = BottomBarDestination.entries.find { it.direction.route == initialState }?.ordinal ?: -1
-                                    val targetIndex = BottomBarDestination.entries.find { it.direction.route == targetState }?.ordinal ?: -1
-
-                                    if (initialIndex != -1 && targetIndex != -1) {
-                                        // Jika pindah antar tab BottomBar
-                                        if (targetIndex > initialIndex) {
-                                            // Geser ke kiri (masuk dari kanan)
-                                            slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) + fadeIn()
-                                        } else {
-                                            // Geser ke kanan (masuk dari kiri)
-                                            slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(300)) + fadeIn()
-                                        }
+                                    if (fromIdx != -1 && toIdx != -1) {
+                                        val forward = toIdx > fromIdx
+                                        slideInHorizontally(
+                                            initialOffsetX = { if (forward) it else -it },
+                                            animationSpec = tween(iosMs, easing = iosCurve)
+                                        ) + fadeIn(tween(iosMs / 2))
                                     } else {
-                                        // Animasi default jika bukan antar tab (misal masuk ke detail)
-                                        fadeIn(animationSpec = tween(300))
+                                        // 详情页从右侧推入
+                                        slideInHorizontally(
+                                            initialOffsetX = { it },
+                                            animationSpec = tween(iosMs, easing = iosCurve)
+                                        ) + fadeIn(tween(220))
                                     }
                                 }
 
                             override val exitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition
                                 get() = {
-                                    val initialState = initialState.destination.route
-                                    val targetState = targetState.destination.route
+                                    val fromRoute = initialState.destination.route
+                                    val toRoute = targetState.destination.route
+                                    val fromIdx = BottomBarDestination.entries.find { it.direction.route == fromRoute }?.ordinal ?: -1
+                                    val toIdx = BottomBarDestination.entries.find { it.direction.route == toRoute }?.ordinal ?: -1
 
-                                    val initialIndex = BottomBarDestination.entries.find { it.direction.route == initialState }?.ordinal ?: -1
-                                    val targetIndex = BottomBarDestination.entries.find { it.direction.route == targetState }?.ordinal ?: -1
-
-                                    if (initialIndex != -1 && targetIndex != -1) {
-                                        if (targetIndex > initialIndex) {
-                                            // Keluar ke kiri
-                                            slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(300)) + fadeOut()
-                                        } else {
-                                            // Keluar ke kanan
-                                            slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300)) + fadeOut()
-                                        }
+                                    if (fromIdx != -1 && toIdx != -1) {
+                                        val forward = toIdx > fromIdx
+                                        slideOutHorizontally(
+                                            targetOffsetX = { if (forward) -it else it },
+                                            animationSpec = tween(iosMs, easing = iosCurve)
+                                        ) + fadeOut(tween(iosMs / 2))
                                     } else {
-                                        fadeOut(animationSpec = tween(300))
+                                        // iOS 视差：退出的页面只左移 1/3，制造纵深
+                                        slideOutHorizontally(
+                                            targetOffsetX = { -it / 3 },
+                                            animationSpec = tween(iosMs, easing = iosCurve)
+                                        ) + fadeOut(tween(iosMs))
                                     }
                                 }
                         }
@@ -394,10 +401,21 @@ class AxActivity : ComponentActivity() {
         Surface(
             modifier = modifier,
             shape = CircleShape,
-            // Tonal secondary so the bar stands apart from the surfaceContainerHigh cards behind it.
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            shadowElevation = 8.dp
+            // 液态玻璃：半透明表面 + 顶部高光描边。
+            // 刻意不用 RenderEffect.blur：天玑 810 上全屏实时模糊会明显掉帧，
+            // 这里用「半透明 + 渐变描边 + 去阴影」做视觉近似，观感接近而零 GPU 额外开销。
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.68f),
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            shadowElevation = 0.dp,
+            border = BorderStroke(
+                1.dp,
+                Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.38f),
+                        Color.White.copy(alpha = 0.04f)
+                    )
+                )
+            )
         ) {
             Row(
                 modifier = Modifier
