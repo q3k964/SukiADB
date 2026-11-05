@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">AxManager</string>
+    <string name="app_name">SukiADB</string>
     <string name="home_running">Berjalan</string>
     <string name="notification_warn_miui">Pengguna MIUI mungkin perlu mengubah gaya notifikasi menjadi \"Android\" dari \"Notifikasi\" - \"Naungan notifikasi\" di pengaturan sistem.</string>
     <string name="notification_warn_miui_2">Jika tidak, Anda mungkin tidak dapat memasukkan kode penyandingan dari notifikasi.</string>

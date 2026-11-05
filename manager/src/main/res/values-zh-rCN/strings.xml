@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">AxManager</string>
+    <string name="app_name">SukiADB</string>
     <string name="home_running">运行中</string>
     <string name="notification_warn_miui">MIUI用户可能需要将通知切换为原生样式。</string>
     <string name="notification_warn_miui_2">否则您可能无法从通知中输入配对码。</string>
