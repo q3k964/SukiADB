@@ -67,6 +67,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
@@ -75,6 +76,9 @@ import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
+import com.kyant.backdrop.highlight.Highlight
+import com.kyant.backdrop.shadow.InnerShadow
+import com.kyant.backdrop.shadow.Shadow
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
@@ -420,10 +424,28 @@ class AxActivity : ComponentActivity() {
                     backdrop = backdrop,
                     shape = { CircleShape },
                     effects = {
+                        // 库的四层效果全开：增饱和 → 背景模糊 → 边缘折射
                         vibrancy()
-                        // 6dp 是天玑 810 上的甜点值：再大掉帧，再小就没有折射感
                         blur(6f.dp.toPx())
                         lens(16f.dp.toPx(), 16f.dp.toPx())
+                    },
+                    // 高光：玻璃边缘那道亮线
+                    highlight = { Highlight.Default },
+                    // 外阴影：让镜片浮起来
+                    shadow = {
+                        Shadow(
+                            radius = 18.dp,
+                            offset = DpOffset(0.dp, 6.dp),
+                            color = Color.Black.copy(alpha = 0.22f)
+                        )
+                    },
+                    // 内阴影：玻璃自身的厚度
+                    innerShadow = {
+                        InnerShadow(
+                            radius = 10.dp,
+                            offset = DpOffset(0.dp, 4.dp),
+                            color = Color.White.copy(alpha = 0.14f)
+                        )
                     },
                     onDrawSurface = { drawRect(glassTint) }
                 ),
