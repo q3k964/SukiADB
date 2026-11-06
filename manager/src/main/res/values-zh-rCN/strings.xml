@@ -336,6 +336,13 @@
     <string name="settings_section_general">常规</string>
     <string name="settings_section_maintenance">维护</string>
     <string name="settings_section_more">更多</string>
+    <string name="settings_section_animation">动画</string>
+    <string name="animation_master">动画总开关</string>
+    <string name="animation_master_desc">关闭会把三个缩放全部设为 0，开启恢复系统默认 1×</string>
+    <string name="animation_window">窗口动画</string>
+    <string name="animation_transition">过渡动画</string>
+    <string name="animation_animator">动画时长</string>
+    <string name="animation_scale_desc">立即生效。1× 是系统默认，0 表示关闭。</string>
     <string name="axeron_permission">AX-权限接管</string>
     <string name="axeron_permission_desc">使用基于 Shizuku-API 构建的 Ax-Environment 接管授权请求</string>
     <string name="plugin_dev_info_title">开发者信息</string>

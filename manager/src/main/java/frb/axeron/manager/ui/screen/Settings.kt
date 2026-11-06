@@ -268,6 +268,10 @@ fun SettingsScreen(navigator: DestinationsNavigator, viewModelGlobal: ViewModelG
                 }
             }
 
+            // Animation scales live in Settings.Global; the section writes them straight
+            // through the server, so it needs no root and no plugin.
+            AnimationSettingsSection(enabled = axeronRunning)
+
             SettingsSectionHeader(stringResource(R.string.settings_section_more))
             SettingsGroup {
                 if (axeronRunning) {

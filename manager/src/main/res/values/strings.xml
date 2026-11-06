@@ -336,6 +336,13 @@
     <string name="settings_section_general">General</string>
     <string name="settings_section_maintenance">Maintenance</string>
     <string name="settings_section_more">More</string>
+    <string name="settings_section_animation">Animation</string>
+    <string name="animation_master">Animations</string>
+    <string name="animation_master_desc">Off sets every scale to 0; on restores the stock 1×</string>
+    <string name="animation_window">Window animation</string>
+    <string name="animation_transition">Transition animation</string>
+    <string name="animation_animator">Animator duration</string>
+    <string name="animation_scale_desc">Applies immediately. 1× is the system default, 0 turns it off.</string>
     <string name="axeron_permission">AX-Permission Intercept</string>
     <string name="axeron_permission_desc">Intercept permission manager built on Shizuku-API using Ax-Environment</string>
     <string name="plugin_dev_info_title">Developer info</string>
