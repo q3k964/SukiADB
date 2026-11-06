@@ -31,8 +31,8 @@ val localProperties = Properties().apply {
 subprojects {
     plugins.withId("com.android.application") {
         extensions.configure<ApplicationExtension> {
-            compileSdk = 36
-            buildToolsVersion = "36.0.0"
+            compileSdk = 37
+            buildToolsVersion = "37.0.0"
             ndkVersion = "29.0.14206865"
             signingConfigs {
                 create("frb-project") {
@@ -69,8 +69,8 @@ subprojects {
     }
     plugins.withId("com.android.library") {
         extensions.configure<LibraryExtension> {
-            compileSdk = 36
-            buildToolsVersion = "36.0.0"
+            compileSdk = 37
+            buildToolsVersion = "37.0.0"
             ndkVersion = "29.0.14206865"
             defaultConfig {
                 minSdk = 26

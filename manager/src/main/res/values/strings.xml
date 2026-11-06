@@ -120,7 +120,7 @@
     <string name="failed">Failed</string>
     <string name="idle">Idle</string>
     <string name="support_me">Support Me</string>
-    <string name="support_me_msg">AxManager is completely free and open-source. If you find it useful, please follow the project and consider giving it a star on GitHub.</string>
+    <string name="support_me_msg">SukiADB is completely free and open-source. If you find it useful, please give the project a star on GitHub.</string>
     <string name="learn_more">Learn AxManager</string>
     <string name="learn_more_msg">Learn how to use AxManager and how to make a plugin</string>
     <string name="updating">Updating…</string>

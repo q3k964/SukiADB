@@ -1389,10 +1389,9 @@ private fun DeviceFactCell(fact: DeviceFact, modifier: Modifier) {
 @Composable
 fun LinksCard() {
     val uriHandler = LocalUriHandler.current
-    val githubFahrez182 = "https://github.com/fahrez182/AxManager"
-    val learnAxManager = "https://fahrez182.github.io/AxManager"
-    val githubIssueUrl = "https://github.com/fahrez182/AxManager/issues"
-    val telegramUrl = "https://t.me/axeron_manager"
+    val githubFahrez182 = "https://github.com/q3k964/SukiADB"
+    val learnAxManager = "https://github.com/q3k964/SukiADB#readme"
+    val githubIssueUrl = "https://github.com/q3k964/SukiADB/issues"
 
     AxCard {
         LinkRow(
@@ -1426,13 +1425,6 @@ fun LinksCard() {
                 Icon(
                     painter = painterResource(R.drawable.ic_github),
                     contentDescription = "Report to github",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            IconButton(onClick = { uriHandler.openUri(telegramUrl) }) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_telegram),
-                    contentDescription = "Report to telegram",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

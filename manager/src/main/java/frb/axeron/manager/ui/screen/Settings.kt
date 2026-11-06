@@ -326,9 +326,7 @@ fun DeveloperInfo(
     onDismissRequest: () -> Unit
 ) {
     val uriHandler = LocalUriHandler.current
-    val githubUrl = "https://github.com/fahrez182"
-    val telegramUrl = "https://t.me/fahrezone"
-    val sociabuzzUrl = "https://sociabuzz.com/fahrezone/tribe"
+    val githubUrl = "https://github.com/q3k964"
 
     if (showDialog) {
         ModalBottomSheet(
@@ -352,7 +350,7 @@ fun DeveloperInfo(
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.fahrez182),
+                        painter = painterResource(id = R.mipmap.ic_launcher),
                         contentDescription = "Developer Profile Picture",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
@@ -366,7 +364,7 @@ fun DeveloperInfo(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "fahrez182 (FahrezONE)",
+                    text = "q3k964",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -407,35 +405,7 @@ fun DeveloperInfo(
                         Text(stringResource(R.string.github))
                     }
 
-                    // Tombol Telegram
-                    FilledTonalButton(
-                        onClick = { uriHandler.openUri(telegramUrl) },
-                        modifier = Modifier.height(38.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_telegram),
-                            contentDescription = "Telegram",
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.telegram))
-                    }
                 }
-                Spacer(modifier = Modifier.height(16.dp))
-
-                FilledTonalButton(
-                    onClick = { uriHandler.openUri(sociabuzzUrl) },
-                    modifier = Modifier.height(38.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Coffee,
-                        contentDescription = "Support / Donate",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.support_or_donate))
-                }
-
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
