@@ -104,6 +104,8 @@ dependencies {
     implementation(libs.compose.destinations.core)
     ksp(libs.compose.destinations.ksp)
     implementation(libs.colorpicker.compose)
+    // 液态玻璃（Kyant0/AndroidLiquidGlass），用于底部导航栏
+    implementation(libs.liquid.glass)
 
     implementation(libs.compose.coil)
 

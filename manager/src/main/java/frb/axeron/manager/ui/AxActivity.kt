@@ -68,6 +68,13 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.effects.blur
+import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.effects.vibrancy
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
@@ -265,6 +272,9 @@ class AxActivity : ComponentActivity() {
         var bottomBarHeight by remember { mutableStateOf(0.dp) }
         val fabHost = remember { FloatingBarFabHost() }
 
+        // 液态玻璃采样源：NavHost 的内容画进这一层，底栏从这里取像素做折射
+        val glassBackdrop = rememberLayerBackdrop()
+
         Box {
             Scaffold(
                 contentWindowInsets = WindowInsets()
@@ -276,7 +286,9 @@ class AxActivity : ComponentActivity() {
                 ) {
                     DestinationsNavHost(
                         // Full-bleed content; the floating bar overlays it and each screen adds its own bottom inset.
-                        modifier = Modifier.padding(innerPadding),
+                        modifier = Modifier
+                            .padding(innerPadding)
+                            .layerBackdrop(glassBackdrop),
                         navGraph = NavGraphs.root,
                         navController = navController,
                         dependenciesContainerBuilder = {
@@ -371,10 +383,11 @@ class AxActivity : ComponentActivity() {
                             verticalAlignment = Alignment.Bottom
                         ) {
                             BottomBar(
-                                navController,
-                                navigator,
-                                activateViewModel.axeronInfo,
-                                pluginViewModel.pluginUpdateCount,
+                                navController = navController,
+                                navigator = navigator,
+                                axeronServerInfo = activateViewModel.axeronInfo,
+                                moduleUpdateCount = pluginViewModel.pluginUpdateCount,
+                                backdrop = glassBackdrop,
                                 // Screens pad for the pill row only (+12dp above and below);
                                 // extra stacked FABs float over content like a normal FAB.
                                 modifier = Modifier.onSizeChanged {
@@ -395,27 +408,29 @@ class AxActivity : ComponentActivity() {
         navigator: DestinationsNavigator,
         axeronServerInfo: AxeronInfo,
         moduleUpdateCount: Int,
+        backdrop: Backdrop,
         modifier: Modifier = Modifier
     ) {
         // Icon-only pill, 56dp tall to match a FAB. Labels show as a tooltip on long-press.
+        val glassTint = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.52f)
+
         Surface(
-            modifier = modifier,
+            modifier = modifier
+                .drawBackdrop(
+                    backdrop = backdrop,
+                    shape = { CircleShape },
+                    effects = {
+                        vibrancy()
+                        // 6dp 是天玑 810 上的甜点值：再大掉帧，再小就没有折射感
+                        blur(6f.dp.toPx())
+                        lens(16f.dp.toPx(), 16f.dp.toPx())
+                    },
+                    onDrawSurface = { drawRect(glassTint) }
+                ),
             shape = CircleShape,
-            // 液态玻璃：半透明表面 + 顶部高光描边。
-            // 刻意不用 RenderEffect.blur：天玑 810 上全屏实时模糊会明显掉帧，
-            // 这里用「半透明 + 渐变描边 + 去阴影」做视觉近似，观感接近而零 GPU 额外开销。
-            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.68f),
+            color = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onSurface,
-            shadowElevation = 0.dp,
-            border = BorderStroke(
-                1.dp,
-                Brush.verticalGradient(
-                    listOf(
-                        Color.White.copy(alpha = 0.38f),
-                        Color.White.copy(alpha = 0.04f)
-                    )
-                )
-            )
+            shadowElevation = 0.dp
         ) {
             Row(
                 modifier = Modifier
