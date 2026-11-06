@@ -337,6 +337,14 @@
     <string name="settings_section_maintenance">Maintenance</string>
     <string name="settings_section_more">More</string>
     <string name="settings_section_animation">Animation</string>
+    <string name="keep_alive_title">Activation keep-alive</string>
+    <string name="keep_alive_channel">Activation keep-alive</string>
+    <string name="keep_alive_starting">Starting…</string>
+    <string name="keep_alive_running">Active — watching the connection</string>
+    <string name="keep_alive_reconnecting">Connection lost — reconnecting</string>
+    <string name="keep_alive_retry">Retrying in %1$d s</string>
+    <string name="settings_keep_alive">Keep-alive</string>
+    <string name="settings_keep_alive_desc">Reconnects automatically when activation drops</string>
     <string name="animation_master">Animations</string>
     <string name="animation_master_desc">Off sets every scale to 0; on restores the stock 1×</string>
     <string name="animation_window">Window animation</string>

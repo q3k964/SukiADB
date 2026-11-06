@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.BugReport
@@ -88,6 +89,7 @@ import frb.axeron.manager.ui.component.AxPanelShape
 import frb.axeron.manager.ui.component.IconBadge
 import frb.axeron.manager.ui.component.SectionHeader
 import frb.axeron.manager.ui.component.SettingsDivider
+import frb.axeron.manager.adb.KeepAlive
 import frb.axeron.manager.ui.component.SettingsGroup
 import frb.axeron.manager.ui.component.SettingsRow
 import frb.axeron.manager.ui.component.StatusPill
@@ -109,6 +111,9 @@ fun SettingsScreen(navigator: DestinationsNavigator, viewModelGlobal: ViewModelG
     var showDevDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
     var showQuickSettings by remember { mutableStateOf(false) }
+    // 保活开关：掉激活时自动重连的后台服务
+    val keepAliveContext = LocalContext.current
+    var keepAliveEnabled by remember { mutableStateOf(KeepAlive.isEnabled(keepAliveContext)) }
     if (showQuickSettings) {
         QuickSettingsSheet(onDismissRequest = { showQuickSettings = false })
     }
@@ -264,6 +269,22 @@ fun SettingsScreen(navigator: DestinationsNavigator, viewModelGlobal: ViewModelG
                         label = stringResource(R.string.reset_path),
                         description = stringResource(R.string.reset_path_desc),
                         onClick = { showResetDialog = true }
+                    )
+                }
+            }
+
+            if (axeronRunning) {
+                SettingsSectionHeader(stringResource(R.string.keep_alive_title))
+                SettingsGroup {
+                    SettingsRow(
+                        iconVector = Icons.Filled.Bolt,
+                        label = stringResource(R.string.settings_keep_alive),
+                        description = stringResource(R.string.settings_keep_alive_desc),
+                        checked = keepAliveEnabled,
+                        onSwitchChange = { on ->
+                            keepAliveEnabled = on
+                            KeepAlive.setEnabled(keepAliveContext, on)
+                        }
                     )
                 }
             }

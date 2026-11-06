@@ -99,6 +99,7 @@ import com.ramcosta.composedestinations.navigation.dependency
 import com.ramcosta.composedestinations.utils.isRouteOnBackStackAsState
 import com.ramcosta.composedestinations.utils.rememberDestinationsNavigator
 import frb.axeron.api.AxeronInfo
+import frb.axeron.manager.adb.KeepAlive
 import frb.axeron.manager.R
 import frb.axeron.manager.ui.component.FloatingBarFabHost
 import frb.axeron.manager.ui.component.bottomBarFadeBrush
@@ -157,6 +158,10 @@ class AxActivity : ComponentActivity() {
         // Only a fresh start: after a recreate (rotation, theme change) the intent was already
         // handled, and handling a VIEW again would flash the same zip a second time.
         if (savedInstanceState == null) intentState = intent
+
+        // 每次打开界面都对齐一次保活服务：
+        // 用户在设置里关掉了就不启，开着但被系统杀掉过就重新拉起来。
+        KeepAlive.sync(this)
 
         setContent {
             AxManagerTheme {

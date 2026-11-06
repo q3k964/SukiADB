@@ -12,6 +12,9 @@
         android:name="android.permission.FOREGROUND_SERVICE"
         tools:ignore="ForegroundServicesPolicy" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"
+        tools:ignore="ForegroundServicesPolicy" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
@@ -202,6 +205,20 @@
             android:exported="false"
             android:foregroundServiceType="shortService"
             tools:ignore="NewApi" />
+
+        <!-- Runs for as long as the user leaves the keep-alive toggle on: pings the binder and
+             replays the activation chain when it dies. specialUse, not shortService, because this
+             one is meant to outlive the 3-minute cap. -->
+        <service
+            android:name=".adb.KeepAliveService"
+            android:directBootAware="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            tools:ignore="NewApi">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Watches the activated shell server and reconnects when the ADB link drops." />
+        </service>
 
         <service
             android:name=".features.quicksettings.AxeronTileService"
