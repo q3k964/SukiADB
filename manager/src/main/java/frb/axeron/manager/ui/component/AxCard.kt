@@ -1,6 +1,7 @@
 package frb.axeron.manager.ui.component
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
@@ -60,7 +62,18 @@ fun AxCard(
     shape: Shape = AxCardShape,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val color = MaterialTheme.colorScheme.surfaceContainerHigh
+    // 液态玻璃卡片：半透明底 + 顶部高光描边，不采样背景，
+    // 所以零 GPU 开销——整屏几十张卡片也不会掉帧。
+    val color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.55f)
+    val glassBorder = BorderStroke(
+        1.dp,
+        Brush.verticalGradient(
+            listOf(
+                Color.White.copy(alpha = 0.10f),
+                Color.White.copy(alpha = 0.02f)
+            )
+        )
+    )
     if (onLongClick != null) {
         Surface(
             modifier = modifier
@@ -73,7 +86,8 @@ fun AxCard(
                 ),
             shape = shape,
             color = color,
-            tonalElevation = 2.dp
+            border = glassBorder,
+            tonalElevation = 0.dp
         ) {
             Column(content = content)
         }
@@ -84,7 +98,8 @@ fun AxCard(
             enabled = enabled,
             shape = shape,
             color = color,
-            tonalElevation = 2.dp
+            border = glassBorder,
+            tonalElevation = 0.dp
         ) {
             Column(content = content)
         }
@@ -93,7 +108,8 @@ fun AxCard(
             modifier = modifier.fillMaxWidth(),
             shape = shape,
             color = color,
-            tonalElevation = 2.dp
+            border = glassBorder,
+            tonalElevation = 0.dp
         ) {
             Column(content = content)
         }
